@@ -3,8 +3,8 @@ import Command from '../../command';
 import Bluebird from 'bluebird';
 
 export default class InstallCommand extends Command<boolean> {
-  execute(apk: string): Bluebird<boolean> {
-    this._send(`shell:pm install -r ${this._escapeCompat(apk)}`);
+  execute(apk: string, options: string = '-r'): Bluebird<boolean> {
+    this._send(`shell:pm install ${options} ${this._escapeCompat(apk)}`);
     return this.parser.readAscii(4).then((reply) => {
       switch (reply) {
         case Protocol.OKAY:
