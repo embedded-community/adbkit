@@ -422,16 +422,17 @@ export default class DeviceClient {
    * Note that if the call seems to stall, you may have to accept a dialog on the phone first.
    *
    * @param apk When `String`, interpreted as a path to an APK file. When [`Stream`][node-stream], installs directly from the stream, which must be a valid APK.
+   * @param options to pass to install command. Defaults to -r.
    * @returns true
    */
-  public install(apk: string | ReadStream): Bluebird<boolean> {
+  public install(apk: string | ReadStream, options: string = '-r'): Bluebird<boolean> {
     const temp = Sync.temp(typeof apk === 'string' ? apk : '_stream.apk');
     return this.push(apk, temp).then((transfer) => {
       let endListener: () => void;
       let errorListener: (err: Error) => void;
       return new Bluebird<boolean>((resolve, reject) => {
         errorListener = (err: Error) => reject(err);
-        endListener = () => this.installRemote(temp).then((value: boolean) => resolve(value));
+        endListener = () => this.installRemote(temp, options).then((value: boolean) => resolve(value));
         transfer.on('error', errorListener);
         transfer.on('end', endListener);
       }).finally(() => {
@@ -447,12 +448,13 @@ export default class DeviceClient {
    * Note that if the call seems to stall, you may have to accept a dialog on the phone first.
    *
    * @param apk The path to the APK file on the device. The file will be removed when the command completes.
+   * @param options to pass to install command. Defaults to -r.
    * @returns true
    */
-  public installRemote(apk: string): Bluebird<boolean> {
+  public installRemote(apk: string, options: string = '-r'): Bluebird<boolean> {
     return this.transport().then((transport) => {
       return new InstallCommand(transport)
-        .execute(apk)
+        .execute(apk, options)
         .then(() => this.shell(['rm', '-f', apk]))
         .then((stream) => new Parser(stream).readAll())
         .then(() => true);
